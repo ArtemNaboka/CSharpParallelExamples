@@ -1,0 +1,3 @@
+LIBRARY MatrixMultiplyCPP.dll
+EXPORTS
+	MultiplyCPP
