@@ -203,15 +203,19 @@ namespace MatrixMultiply
         {
             // Масив задач
             Task[] tasks = new Task[ProcessorCount - 1];
+            // Кількість ітерацій на потік
             Int32 iterationsPerTask = n / ProcessorCount;
             Int32 i, currentStartNumber;
-            for (i = 0, currentStartNumber = -1; i < ProcessorCount - 1; i++, currentStartNumber += iterationsPerTask)
+            for (i = 0, currentStartNumber = 0; i < ProcessorCount - 1; i++, currentStartNumber += iterationsPerTask)
             {
                 Int32 number = currentStartNumber;
-                tasks[i] = Task.Run(() => MultiplyWithBounds(matrA, matrB, result, n, number + 1, number + iterationsPerTask));
+                // Створюємо та одразу запускаємо нову задачу
+                tasks[i] = Task.Run(() => 
+                    MultiplyWithBounds(matrA, matrB, result, n, number, number + iterationsPerTask - 1));
             }
 
-            MultiplyWithBounds(matrA, matrB, result, n, currentStartNumber + 1, currentStartNumber + iterationsPerTask);
+            // Для головного потоку
+            MultiplyWithBounds(matrA, matrB, result, n, currentStartNumber, currentStartNumber + iterationsPerTask - 1);
 
             // Чекаємо, коли усі задачі завершаться
             Task.WhenAll(tasks).Wait();
@@ -221,17 +225,22 @@ namespace MatrixMultiply
             Double[,] result, Int32 n)
         {
             Thread[] threads = new Thread[ProcessorCount - 1];
+            // Кількість ітерацій на потік
             Int32 iterationsPerTask = n / ProcessorCount;
             Int32 i, currentStartNumber;
-            for (i = 0, currentStartNumber = -1; i < ProcessorCount - 1; i++, currentStartNumber += iterationsPerTask)
+            for (i = 0, currentStartNumber = 0; i < ProcessorCount - 1; i++, currentStartNumber += iterationsPerTask)
             {
                 Int32 number = currentStartNumber;
-                threads[i] = new Thread(() => MultiplyWithBounds(matrA, matrB, result, n, number + 1, number + iterationsPerTask));
+                // Створюємо новий потік
+                threads[i] = new Thread(() 
+                    => MultiplyWithBounds(matrA, matrB, result, n, number, number + iterationsPerTask - 1));
                 threads[i].Start();
             }
 
-            MultiplyWithBounds(matrA, matrB, result, n, currentStartNumber + 1, currentStartNumber + iterationsPerTask);
+            // Для головного потоку
+            MultiplyWithBounds(matrA, matrB, result, n, currentStartNumber, currentStartNumber + iterationsPerTask - 1);
 
+            // Чекаємо завершення усіх потоків
             for (Int32 j = 0; j < ProcessorCount - 1; j++)
             {
                 threads[j].Join();
