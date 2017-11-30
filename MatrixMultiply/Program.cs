@@ -8,6 +8,8 @@ namespace MatrixMultiply
 {
     public class Program
     {
+        public static Int32 ProcessorCount = Environment.ProcessorCount;
+
         public static void Main(String[] args)
         {
             // Розмір матриць 2048*2048
@@ -59,7 +61,7 @@ namespace MatrixMultiply
                 // Перевірка правильності результату
                 if (!AreMatricesEqual(res, resParallel))
                 {
-                    Console.Write("ALARM!! Different result in Sequential and Parallel.For() multiply");
+                    Console.WriteLine("ALARM!! Different result in Sequential and Parallel.For() multiply");
                 }
 
                 timer.Reset();
@@ -75,7 +77,7 @@ namespace MatrixMultiply
                 // Перевірка правильності результату
                 if (!AreMatricesEqual(res, resTasks))
                 {
-                    Console.Write("ALARM!! Different result in Sequential and Tasks multiply");
+                    Console.WriteLine("ALARM!! Different result in Sequential and Tasks multiply");
                 }
 
                 timer.Reset();
@@ -91,7 +93,7 @@ namespace MatrixMultiply
                 // Перевірка правильності результату
                 if (!AreMatricesEqual(res, resThreads))
                 {
-                    Console.Write("ALARM!! Different result in Sequential and Threads multiply");
+                    Console.WriteLine("ALARM!! Different result in Sequential and Threads multiply");
                 }
 
                 timer.Reset();
@@ -200,24 +202,16 @@ namespace MatrixMultiply
             Double[,] result, Int32 n)
         {
             // Масив задач
-            Task[] tasks = new Task[n];
-            for (Int32 i = 0; i < n; i++)
+            Task[] tasks = new Task[ProcessorCount - 1];
+            Int32 iterationsPerTask = n / ProcessorCount;
+            Int32 i, currentStartNumber;
+            for (i = 0, currentStartNumber = -1; i < ProcessorCount - 1; i++, currentStartNumber += iterationsPerTask)
             {
-                Int32 iterator = i;
-                tasks[iterator] = new Task(() =>
-                {
-                    for (Int32 j = 0; j < n; j++)
-                    {
-                        Double temp = matrA[iterator, j];
-                        for (Int32 k = 0; k < n; k++)
-                        {
-                            result[iterator, k] += temp * matrB[j, k];
-                        }
-                    }
-                });
-
-                tasks[iterator].Start();
+                Int32 number = currentStartNumber;
+                tasks[i] = Task.Run(() => MultiplyWithBounds(matrA, matrB, result, n, number + 1, number + iterationsPerTask));
             }
+
+            MultiplyWithBounds(matrA, matrB, result, n, currentStartNumber + 1, currentStartNumber + iterationsPerTask);
 
             // Чекаємо, коли усі задачі завершаться
             Task.WhenAll(tasks).Wait();
@@ -226,28 +220,37 @@ namespace MatrixMultiply
         public static void MultiplyMatricesThreads(Double[,] matrA, Double[,] matrB,
             Double[,] result, Int32 n)
         {
-            Thread[] threads = new Thread[n];
-            for (Int32 i = 0; i < n; i++)
+            Thread[] threads = new Thread[ProcessorCount - 1];
+            Int32 iterationsPerTask = n / ProcessorCount;
+            Int32 i, currentStartNumber;
+            for (i = 0, currentStartNumber = -1; i < ProcessorCount - 1; i++, currentStartNumber += iterationsPerTask)
             {
-                Int32 iterator = i;
-                threads[iterator] = new Thread(() =>
-                {
-                    for (Int32 j = 0; j < n; j++)
-                    {
-                        Double temp = matrA[iterator, j];
-                        for (Int32 k = 0; k < n; k++)
-                        {
-                            result[iterator, k] += temp * matrB[j, k];
-                        }
-                    }
-                });
-
-                threads[iterator].Start();
+                Int32 number = currentStartNumber;
+                threads[i] = new Thread(() => MultiplyWithBounds(matrA, matrB, result, n, number + 1, number + iterationsPerTask));
+                threads[i].Start();
             }
 
-            for (Int32 i = 0; i < n; i++)
+            MultiplyWithBounds(matrA, matrB, result, n, currentStartNumber + 1, currentStartNumber + iterationsPerTask);
+
+            for (Int32 j = 0; j < ProcessorCount - 1; j++)
             {
-                threads[i].Join();
+                threads[j].Join();
+            }
+        }
+
+        public static void MultiplyWithBounds(Double[,] matrA, Double[,] matrB,
+            Double[,] result, Int32 n, Int32 startRow, Int32 finishRow)
+        {
+            for (Int32 i = startRow; i <= finishRow; i++)
+            {
+                for (Int32 j = 0; j < n; j++)
+                {
+                    Double temp = matrA[i, j];
+                    for (Int32 k = 0; k < n; k++)
+                    {
+                        result[i, k] += temp * matrB[j, k];
+                    }
+                }
             }
         }
 
