@@ -84,9 +84,9 @@ namespace MatrixMultiply
                 timer.Start();
                 MultiplyMatricesThreads(m1, m2, resThreads, n);
                 timer.Stop();
-                minTimeTasks = minTimeTasks > timer.ElapsedMilliseconds
+                minTimeThreads = minTimeThreads > timer.ElapsedMilliseconds
                    ? timer.ElapsedMilliseconds
-                   : minTimeTasks;
+                   : minTimeThreads;
 
                 // Перевірка правильності результату
                 if (!AreMatricesEqual(res, resThreads))
