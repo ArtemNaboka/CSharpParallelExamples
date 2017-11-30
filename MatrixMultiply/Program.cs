@@ -8,12 +8,14 @@ namespace MatrixMultiply
 {
     public class Program
     {
+        // Кількість ядер в процесорі
         public static Int32 ProcessorCount = Environment.ProcessorCount;
 
         public static void Main(String[] args)
         {
             // Розмір матриць 2048*2048
             const Int32 n = 2048;
+            // Кількість повторів заміру часу
             const Int32 tryCount = 3;
 
             // Ініціалізуємо першу матрицю
@@ -247,6 +249,7 @@ namespace MatrixMultiply
             }
         }
 
+        // Множення певних рядів матриць
         public static void MultiplyWithBounds(Double[,] matrA, Double[,] matrB,
             Double[,] result, Int32 n, Int32 startRow, Int32 finishRow)
         {
